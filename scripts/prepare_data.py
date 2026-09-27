@@ -45,18 +45,21 @@ def main() -> None:
 
     raw_dir = PROJECT_ROOT / path_config["raw_dir"]
     processed_dir = PROJECT_ROOT / path_config["processed_dir"]
-    overwrite = bool(args.overwrite_raw or data_config.get("overwrite_raw", False))
+    overwrite_all_raw = bool(args.overwrite_raw or data_config.get("overwrite_raw", False))
+    current_year = date.today().year
 
     xml_paths = []
     for year in range(start_year, end_year + 1):
         destination = raw_dir / f"daily_treasury_yield_curve_{year}.xml"
-        print(f"[{year}] {'refreshing' if overwrite else 'loading/downloading'} {destination}")
+        refresh_this_year = overwrite_all_raw or year == current_year
+        status = "refreshing" if refresh_this_year else "loading/downloading"
+        print(f"[{year}] {status} {destination}")
         xml_paths.append(
             download_year(
                 year,
                 destination,
                 timeout=int(data_config.get("request_timeout_seconds", 60)),
-                overwrite=overwrite,
+                overwrite=refresh_this_year,
             )
         )
 
