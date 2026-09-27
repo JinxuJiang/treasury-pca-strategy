@@ -1,0 +1,12 @@
+data:
+  source: us_treasury_daily_par_yield_curve
+  start_year: 1990
+  end_year: null
+  maturities: [2Y, 5Y, 10Y, 30Y]
+  request_timeout_seconds: 60
+  overwrite_raw: false
+  max_change_gap_days: 7
+
+paths:
+  raw_dir: data/raw/treasury
+  processed_dir: data/processed
