@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -99,6 +100,57 @@ def main() -> None:
     reconstructed_output.insert(0, "date", sample["date"].to_numpy())
 
     reconstruction_summary = pd.DataFrame(reconstruction_summary_rows)
+
+    # Pre-compute the period stability diagnostics so reporting notebooks only
+    # need to read saved results instead of fitting PCA models themselves.
+    stability_periods = {
+        "2006-2012": (pd.Timestamp("2006-02-10"), pd.Timestamp("2012-12-31")),
+        "2013-2019": (pd.Timestamp("2013-01-01"), pd.Timestamp("2019-12-31")),
+        "2020-present": (pd.Timestamp("2020-01-01"), sample["date"].max()),
+    }
+    stability_loading_rows = []
+    stability_summary_rows = []
+    reference_loadings = pca.components_
+
+    for period_name, (period_start, period_end) in stability_periods.items():
+        period_data = sample.loc[
+            sample["date"].between(period_start, period_end), change_columns
+        ]
+        if period_data.empty:
+            continue
+
+        period_pca = fit_pca(period_data, n_components=n_components, orient=True)
+        aligned_loadings = period_pca.components_.copy()
+        for pc_index in range(n_components):
+            if np.dot(aligned_loadings[pc_index], reference_loadings[pc_index]) < 0:
+                aligned_loadings[pc_index] *= -1.0
+
+            component = f"PC{pc_index + 1}"
+            cosine_similarity = float(
+                np.dot(aligned_loadings[pc_index], reference_loadings[pc_index])
+            )
+            stability_summary_rows.append(
+                {
+                    "period": period_name,
+                    "component": component,
+                    "explained_variance_ratio": float(
+                        period_pca.explained_variance_ratio_[pc_index]
+                    ),
+                    "cosine_similarity_to_training": cosine_similarity,
+                }
+            )
+            for maturity, loading in zip(change_columns, aligned_loadings[pc_index]):
+                stability_loading_rows.append(
+                    {
+                        "period": period_name,
+                        "component": component,
+                        "maturity": maturity,
+                        "loading": float(loading),
+                    }
+                )
+
+    stability_loadings = pd.DataFrame(stability_loading_rows)
+    stability_summary = pd.DataFrame(stability_summary_rows)
     metadata = {
         "sample_start": sample["date"].min().strftime("%Y-%m-%d"),
         "sample_end": sample["date"].max().strftime("%Y-%m-%d"),
@@ -131,6 +183,8 @@ def main() -> None:
         index=False,
         date_format="%Y-%m-%d",
     )
+    stability_loadings.to_csv(output_dir / "stability_loadings.csv", index=False)
+    stability_summary.to_csv(output_dir / "stability_summary.csv", index=False)
     (output_dir / "pca_metadata.json").write_text(
         json.dumps(metadata, indent=2), encoding="utf-8"
     )
