@@ -1,0 +1,18 @@
+# Unregularized linear-regression control using the same expanding pipeline.
+data:
+  maturities: [2Y, 5Y, 10Y, 30Y]
+
+paths:
+  processed_dir: data/processed
+  forecast_dir: results/predictions_alpha_zero
+
+pca:
+  retained_components: 3
+
+forecast:
+  first_oos_date: 2020-01-01
+  horizon_days: 5
+  validation_years: 2
+  ridge_alphas: [0.0]
+  refit_frequency: monthly
+  prediction_frequency: daily

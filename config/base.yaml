@@ -11,9 +11,18 @@ paths:
   raw_dir: data/raw/treasury
   processed_dir: data/processed
   pca_dir: data/processed/pca
+  forecast_dir: results/predictions
 
 pca:
   sample_start: 2006-02-10
   train_end: 2019-12-31
   n_components: 4
   retained_components: 3
+
+forecast:
+  first_oos_date: 2020-01-01
+  horizon_days: 5
+  validation_years: 2
+  ridge_alphas: [0.1, 1.0, 10.0, 100.0]
+  refit_frequency: monthly
+  prediction_frequency: daily
