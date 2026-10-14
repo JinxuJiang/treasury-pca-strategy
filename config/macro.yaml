@@ -1,0 +1,17 @@
+base_config: config/base.yaml
+cache_dir: data/raw/fred_vintages
+output_dir: data/processed/macro
+observation_start: '2004-01-01'
+# null means the last Treasury sample date, not the execution host's date.
+vintage_end: null
+availability_lag_sessions: 1
+series:
+  unemployment:
+    id: UNRATE
+    kind: unemployment
+  cpi:
+    id: CPIAUCSL
+    kind: price_index
+  core_pce:
+    id: PCEPILFE
+    kind: price_index

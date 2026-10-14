@@ -36,7 +36,7 @@ Thumbs.db
 desktop.ini
 
 #data
-data/
+/data/
 *.xml
 
 # Fitted models and generated research results
