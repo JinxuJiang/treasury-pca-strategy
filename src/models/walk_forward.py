@@ -34,10 +34,21 @@ def run_monthly_expanding_forecast(
     retained_components: int = 3,
     validation_years: int = 2,
     ridge_alphas: Sequence[float] = (0.1, 1.0, 10.0, 100.0),
+    extra_features: pd.DataFrame | None = None,
+    sample_mask: pd.Series | None = None,
+    model_type: str = "ridge",
 ) -> WalkForwardResult:
     """Produce stitched daily OOS forecasts from monthly expanding refits."""
+    if model_type not in ("ridge", "lgbm"):
+        raise ValueError("model_type must be ridge or lgbm")
+    if model_type == "lgbm":
+        from src.models.lgbm_model import choose_lgbm_params, fit_lgbm
     if not changes.index.equals(levels.index):
         raise ValueError("changes and levels must have identical date indexes")
+    if sample_mask is None:
+        sample_mask = pd.Series(True, index=changes.index)
+    elif not sample_mask.index.equals(changes.index) or sample_mask.isna().any():
+        raise ValueError("sample mask must match dates and contain no missing values")
 
     # return ebery month training dates and prediction dates  (month_start, cutoff, prediction_dates)
     periods = monthly_forecast_periods(changes.index, first_oos_date)
@@ -47,6 +58,8 @@ def run_monthly_expanding_forecast(
     loading_rows: list[dict[str, object]] = []
 
     for month_start, cutoff, prediction_dates in periods:
+        if not sample_mask.loc[prediction_dates].any():
+            continue
         target_columns = [
             f"target_PC{i}_{horizon_days}d"
             for i in range(1, retained_components + 1)
@@ -69,6 +82,7 @@ def run_monthly_expanding_forecast(
         # using training pca loading, get the whole feacutures and tragets data.
         tuning_frame = build_feature_target_frame(
             pca=tuning_pca, # use the training pca
+            extra_features=extra_features,
             changes=changes, # use the whole change, levels, which means it conduct the all data.
             levels=levels,
             maturities=maturities,
@@ -83,6 +97,7 @@ def run_monthly_expanding_forecast(
             eligible_training_rows(tuning_frame, cutoff)
             & tuning_complete_features
             & tuning_complete_targets
+            & sample_mask
         )
         # split the whole data tuning_frame/ tuning_eligible into subtrain, validation
         subtrain, validation = chronological_validation_masks(
@@ -95,7 +110,7 @@ def run_monthly_expanding_forecast(
         # 2. Select each component's alpha before fitting the final models.
         # use a dic to store the best alpha and rmse for each pc.
         # {"PC1": (100.0, 20.8),"PC2": (10.0, 8.2),"PC3": (1.0, 2.5)}
-        tuning_results: dict[str, tuple[float, float]] = {}
+        tuning_results: dict[str, tuple[float | dict, float]] = {}
         for pc_index in range(1, retained_components + 1):
             pc = f"PC{pc_index}"
             target = f"target_{pc}_{horizon_days}d"
@@ -106,6 +121,8 @@ def run_monthly_expanding_forecast(
                 subtrain,
                 validation,
                 ridge_alphas,
+            ) if model_type == "ridge" else choose_lgbm_params(
+                tuning_frame, tuning_features, target, subtrain, validation
             )
 
         # 3. Refit PCA through cutoff and rebuild the final feature/target frame.
@@ -119,6 +136,7 @@ def run_monthly_expanding_forecast(
         )
         frame = build_feature_target_frame(
             pca=pca,
+            extra_features=extra_features,
             changes=changes,
             levels=levels,
             maturities=maturities,
@@ -132,9 +150,10 @@ def run_monthly_expanding_forecast(
             eligible_training_rows(frame, cutoff)
             & complete_features
             & complete_targets
+            & sample_mask
         )
 
-        prediction_mask = frame.index.isin(prediction_dates) & complete_features # choose the complete features and prediction dates.
+        prediction_mask = frame.index.isin(prediction_dates) & complete_features & sample_mask # choose the complete features and prediction dates.
         prediction_frame = pd.DataFrame(index=frame.index[prediction_mask])
         prediction_frame.index.name = "prediction_date"
         prediction_frame["model_cutoff_date"] = cutoff
@@ -148,11 +167,11 @@ def run_monthly_expanding_forecast(
             pc = f"PC{pc_index}"
             target = f"target_{pc}_{horizon_days}d"
             alpha, validation_rmse = tuning_results[pc]
-            ridge = fit_ridge(frame, features, target, eligible, alpha)
+            ridge = fit_ridge(frame, features, target, eligible, alpha) if model_type == "ridge" else fit_lgbm(frame, features, target, eligible, alpha)
             # add a column to store the actual target value.
             prediction_frame[f"actual_{pc}"] = frame.loc[prediction_mask, target]
             # add a column to store the ridge predict value.
-            prediction_frame[f"ridge_{pc}"] = ridge.predict(
+            prediction_frame[f"{model_type}_{pc}"] = ridge.predict(
                 frame.loc[prediction_mask, features]
             )
 
@@ -168,7 +187,7 @@ def run_monthly_expanding_forecast(
                     "last_training_target_end_date": frame.loc[
                         eligible, "target_end_date"
                     ].max(),
-                    "ridge_alpha": alpha,
+                    ("ridge_alpha" if model_type == "ridge" else "lgbm_params"): alpha,
                     "validation_rmse": validation_rmse,
                 }
             )

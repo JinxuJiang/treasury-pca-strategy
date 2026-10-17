@@ -40,6 +40,7 @@ def build_feature_target_frame(
     maturities: Sequence[str],
     retained_components: int = 3,
     horizon_days: int = 5,
+    extra_features: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Build one PCA-vintage dataset using only contemporaneous and past features."""
     if not changes.index.equals(levels.index):
@@ -75,6 +76,13 @@ def build_feature_target_frame(
     targets, target_end = forward_sum_and_end_date(scores, horizon_days)
     frame = frame.join(targets)
     frame["target_end_date"] = target_end
+    if extra_features is not None:
+        if not extra_features.index.equals(frame.index):
+            raise ValueError("extra features must have the same date index")
+        if any(column in frame.columns or column.startswith("target_")
+               for column in extra_features.columns):
+            raise ValueError("extra feature names must be unique and cannot be targets")
+        frame = frame.join(extra_features)
     return frame
 
 

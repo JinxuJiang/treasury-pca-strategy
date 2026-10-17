@@ -185,3 +185,36 @@ The mean $\mu$ must be added back because it was removed before the projection. 
 - Numerical outputs: `data/processed/pca/`
 
 The PCA validation notebook uses a fixed coordinate system fitted on 2006–2019 data. The production forecasting pipeline uses monthly expanding PCA fits, with each fit restricted to information available at that time.
+
+## 2.7 Loading and scores
+Loading = direction / shape
+        train: pca = fit_pca(training_changes,n_components=4,orient=True)
+        check the loadings: loadings = pca.components_
+Score   = 当天沿这个方向移动了多少
+        scores = transform_to_pc_scores(pca,changes)
+
+
+### Model train and forecast
+
+flowchart TD
+    A["原始数据：每日4个期限的利率变化 changes<br/>以及收益率水平 levels"] --> B["time_split.monthly_forecast_periods<br/>确定预测月份、cutoff、每日预测日期"]
+    B --> C["本轮：预测2020年1月<br/>cutoff = 2019年末最后一个交易日"]
+
+    C --> D["调参分支"]
+    C --> E["最终模型分支"]
+
+    D --> D1["fit_pca：只用验证期开始前的 changes<br/>得到 tuning_pca 的均值和 loading"]
+    D1 --> D2["build_feature_target_frame(tuning_pca, ...)<br/>transform 得到历史 PC score<br/>由 score 和 levels 构造 X、未来5日标签 y"]
+    D2 --> D3["time_split.chronological_validation_masks<br/>选出 subtrain 和 validation<br/>训练标签不得跨入验证期"]
+    D3 --> D4["ridge_model.choose_ridge_alpha<br/>在 subtrain 拟合候选 Ridge<br/>在 validation 比较 RMSE"]
+    D4 --> F["PC1、PC2、PC3 各得到一个 alpha"]
+
+    E --> E1["fit_pca：使用 cutoff 前全部 changes<br/>得到最终 PCA 的新均值和 loading"]
+    E1 --> E2["build_feature_target_frame(最终PCA, ...)<br/>重新计算历史 PC score、X 和 y"]
+    E2 --> E3["time_split.eligible_training_rows<br/>只取 target_end_date ≤ cutoff<br/>且特征、标签完整的历史行"]
+
+    F --> G["ridge_model.fit_ridge"]
+    E3 --> G
+    G --> H["共用同一张 X 表<br/>分别训练 PC1、PC2、PC3 的 Ridge"]
+    H --> I["使用本月每日的新 X 预测未来5日的三个PC目标"]
+    I --> J["保存每日预测；进入下个月，更新 cutoff 后重跑"]

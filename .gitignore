@@ -17,6 +17,7 @@ ENV/
 htmlcov/
 # Jupyter temporary files
 .ipynb_checkpoints/
+test.ipynb
 
 # IDE settings
 .vscode/

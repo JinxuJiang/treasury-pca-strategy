@@ -11,7 +11,7 @@ paths:
   raw_dir: data/raw/treasury
   processed_dir: data/processed
   pca_dir: data/processed/pca
-  forecast_dir: results/predictions
+  forecast_dir: results/forecast
 
 pca:
   sample_start: 2006-02-10
