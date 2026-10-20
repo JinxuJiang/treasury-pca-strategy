@@ -1,0 +1,52 @@
+# One curve portfolio. Same risk capital, execution and cost assumptions as capacity PC tests.
+model: ridge
+forecast_dir: results/forecast/ridge
+signal_dir: results/signals/ridge_curve_regression
+output_dir: results/backtest/ridge_curve_regression
+processed_dir: data/processed
+futures_dir: data/processed/futures_candidates
+calendar: CME_InterestRate
+initial_cash: 10000000
+risk:
+  five_day_std_budget_fraction: 0.01
+  volatility_window: 252
+  gross_dv01_limit: 100000
+  max_contracts_per_leg: 1000
+  max_margin_fraction: 0.50
+execution:
+  commission_per_contract_side: 2.5
+  slippage_ticks_per_side: 0.5
+# Fixed USD per contract, referenced to CME historical report dated 2026-06-30.
+# Research assumption across all dates; not a historical schedule or live broker quote.
+# Source: https://www.cmegroup.com/solutions/risk-management/margin-services/historical-margins.html
+contracts:
+  ZT:
+    maturity: 2Y
+    multiplier: 2000
+    tick_size: 0.00390625
+    assumed_margin: 1200
+  ZF:
+    maturity: 5Y
+    multiplier: 1000
+    tick_size: 0.0078125
+    assumed_margin: 1250
+  ZN:
+    maturity: 10Y
+    multiplier: 1000
+    tick_size: 0.015625
+    assumed_margin: 1875
+  ZB:
+    maturity: 30Y
+    multiplier: 1000
+    tick_size: 0.03125
+    assumed_margin: 3700
+strategy: curve
+
+sensitivity:
+  method: rolling_regression
+  window: 756
+  min_observations: 126
+  min_five_day_observations: 60
+  min_r_squared: 0.30
+  max_condition_number: 10000
+  residual_mad_limit: 6

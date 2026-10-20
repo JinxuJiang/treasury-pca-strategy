@@ -1,4 +1,4 @@
-"""Prepare Treasury yields and point-in-time macro features in one run."""
+"""Prepare Treasury yields, PIT macro features and futures candidates in one run."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ from src.data.treasury_yields import (  # noqa: E402
 
 
 from src.data.fred_vintages import FredVintageClient
+from src.data.futures_prices import prepare_futures_data
 from src.features.macro_features import snapshot_features, align_updates
 
 
@@ -32,7 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "config/base.yaml")
     parser.add_argument("--macro-config", type=Path, default=PROJECT_ROOT / "config/macro.yaml")
-    parser.add_argument("--offline", action="store_true", help="Use cached Treasury XML and FRED snapshots only")
+    parser.add_argument("--offline", action="store_true", help="Use cached Treasury XML, FRED snapshots and futures JSON only")
     parser.add_argument("--start-year", type=int)
     parser.add_argument("--end-year", type=int)
     parser.add_argument("--overwrite-raw", action="store_true")
@@ -153,6 +154,8 @@ def main() -> None:
     prepare_treasury(config, args)
     print("Preparing macro data ...", flush=True)
     prepare_macro(macro_config, config, offline=args.offline)
+    print("Preparing Treasury futures candidates ...", flush=True)
+    prepare_futures_data(config, PROJECT_ROOT, offline=args.offline)
 
 
 if __name__ == "__main__":

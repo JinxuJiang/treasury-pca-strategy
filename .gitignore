@@ -50,3 +50,11 @@ reports/tables/
 *.log
 *.tmp
 *.temp
+
+# Local research notes (keep files locally, do not version)
+/logic.md
+/利率PCA策略_中文说明.md
+
+# Published result summary and figure belong in the repository
+!/docs/results/
+!/docs/results/**

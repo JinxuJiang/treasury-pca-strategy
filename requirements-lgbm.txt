@@ -1,3 +1,0 @@
-# Optional dependency for monthly LightGBM experiments.
--r requirements.txt
-lightgbm>=4.0,<5.0

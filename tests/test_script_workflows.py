@@ -24,8 +24,11 @@ def test_combined_preparation_uses_same_base_config_in_order(tmp_path, monkeypat
                         lambda config, args: calls.append(('treasury', config, args.offline)))
     monkeypatch.setattr(prepare_data, 'prepare_macro',
                         lambda config, base, offline: calls.append(('macro', config, base, offline)))
+    monkeypatch.setattr(prepare_data, 'prepare_futures_data',
+                        lambda config, root, offline: calls.append(('futures', config, offline)))
     prepare_data.main()
-    assert calls == [('treasury', base, True), ('macro', macro, base, True)]
+    assert calls == [('treasury', base, True), ('macro', macro, base, True),
+                     ('futures', base, True)]
 
 
 def test_macro_prediction_runs_once_and_restores_five_day_mean(tmp_path, monkeypatch):

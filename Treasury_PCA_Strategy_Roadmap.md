@@ -1,5 +1,7 @@
 # Treasury Yield-Curve PCA Strategy Roadmap
 
+> 历史研究规划，非当前运行说明（2026-10-20标记）。文中的拟议目录、即时待办和DV01映射等不代表当前实现。当前安装与运行以README.md为准；当前组合方法见docs/regression_sensitivity.md。现已完成收益率/宏观数据、PCA预测、回归敏感度配仓和连续期货探索性回测；真实换月、CTD核验等仍待后续研究。
+
 ## 1. Project objective
 
 Build an interpretable systematic interest-rate strategy with the following chain:

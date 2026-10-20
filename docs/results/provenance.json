@@ -1,0 +1,75 @@
+{
+  "completed_at_utc": "2026-10-20T15:57:14.913058+00:00",
+  "period": [
+    "2020-01-03",
+    "2026-10-05"
+  ],
+  "accounts": "Four independent accounts, USD 10 million each; not a combined portfolio",
+  "results": "Net of configured commission and slippage; cash earns no interest",
+  "config_files": [
+    "config/backtest_capacity.yaml",
+    "config/backtest_curve.yaml"
+  ],
+  "inputs": [
+    {
+      "path": "results/signals/ridge_capacity_regression/weekly_targets.csv",
+      "sha256": "39c49522c5c3e78094af35bdf35e0b79dd5faf7f53df3d204b941897f45aa549"
+    },
+    {
+      "path": "results/signals/ridge_capacity_regression/manifest.json",
+      "sha256": "59c82fa3fb1fb28ad089449d3413d90407802dc9cc07d787bca1d683eebdf54b"
+    },
+    {
+      "path": "config/backtest_capacity.yaml",
+      "sha256": "a8b087760fcc0e9fcf0036f640f17f3740b8699f77951f5923793a5f267dd2b3"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZT.csv",
+      "sha256": "6cabcef6d362f79779366afde32f4ed2f6adb5404ab4f290ffb4d4f630b83a43"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZF.csv",
+      "sha256": "6c77de2b40b09b31f32519f022622191d5279d1c1eda79733dfe74569f2547c8"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZN.csv",
+      "sha256": "1f567fe9e97e8d8a041d7ff17b02454040de773ff00b0f03f1bc123ae8fa4bc3"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZB.csv",
+      "sha256": "661a99a68594db181de454b3636a411a3f0f88462a0fd4bc23a58622c134a311"
+    },
+    {
+      "path": "results/signals/ridge_curve_regression/weekly_targets.csv",
+      "sha256": "bfff3750c3556c62212d494d8386cae67fad388338b297f6f2da4664d2f2396b"
+    },
+    {
+      "path": "results/signals/ridge_curve_regression/manifest.json",
+      "sha256": "aafad513036a1961e4592416da0cfbd4203b343f0a2a7d611cc631a1f2b4c009"
+    },
+    {
+      "path": "config/backtest_curve.yaml",
+      "sha256": "c2c3a2cfd6620d61bab533dce16e4d0e127061894e06d99492b67c7575db08e9"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZT.csv",
+      "sha256": "6cabcef6d362f79779366afde32f4ed2f6adb5404ab4f290ffb4d4f630b83a43"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZF.csv",
+      "sha256": "6c77de2b40b09b31f32519f022622191d5279d1c1eda79733dfe74569f2547c8"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZN.csv",
+      "sha256": "1f567fe9e97e8d8a041d7ff17b02454040de773ff00b0f03f1bc123ae8fa4bc3"
+    },
+    {
+      "path": "data/processed/futures_candidates/ZB.csv",
+      "sha256": "661a99a68594db181de454b3636a411a3f0f88462a0fd4bc23a58622c134a311"
+    }
+  ],
+  "artifacts": {
+    "summary.csv": "92d37d81cfe413147e1a19a27090b552e7802f92ac96a1e27fd9f328f28d797e",
+    "equity_comparison.png": "36e4b0840edc7dc7736bc02e5f9627db08379d930ea245bc77b212a876c4ec28"
+  }
+}

@@ -19,6 +19,15 @@ pca:
   n_components: 4
   retained_components: 3
 
+futures:
+  symbols: [ZT, ZF, ZN, ZB]
+  start_date: '2000-01-01'
+  # Exclusive end; null excludes today's possibly incomplete daily bar.
+  end_date: null
+  raw_dir: data/raw/futures/yahoo_candidates
+  output_dir: data/processed/futures_candidates
+  request_timeout_seconds: 60
+
 forecast:
   first_oos_date: 2020-01-01
   horizon_days: 5
