@@ -127,8 +127,8 @@ def run_monthly_expanding_forecast(
 
         # 3. Refit PCA through cutoff and rebuild the final feature/target frame.
         #prediction_date  model_cutoff_date  pca_version  target_end_date
-        #2020-01-02       2019-12-31         2019-12-31   对应的第5个未来交易日
-        #2020-01-03       2019-12-31         2019-12-31   对应的第5个未来交易日
+        #2020-01-02       2019-12-31         2019-12-31   corresponding fifth future observation date
+        #2020-01-03       2019-12-31         2019-12-31   corresponding fifth future observation date
         pca = fit_pca(
             changes.loc[:cutoff], # use the whole training and validation data to fit pca.
             n_components=changes.shape[1],

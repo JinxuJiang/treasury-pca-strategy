@@ -36,10 +36,10 @@ def monthly_forecast_periods(
     first_oos_date: pd.Timestamp,
 ) -> list[tuple[pd.Timestamp, pd.Timestamp, pd.DatetimeIndex]]:
     """Return each forecast month, its preceding cutoff, and its daily dates.
-    从第一个 OOS 月份开始，逐月往后走；每一轮找出该月之前最后一个交易日作为 cutoff，再找出该月所有要预测的交易日.
-    返回 (月份, cutoff, 预测日期)。
-    (2016-01, 2015年末最后交易日, 2016年1月所有交易日)
-    (2016-02, 2016年1月末最后交易日, 2016年2月所有交易日)
+    Iterate monthly from the first OOS month. Use the last preceding session as the cutoff and collect prediction dates for that month.
+    Yield (month, cutoff, prediction dates).
+    (2016-01, last session of 2015, all prediction sessions in January 2016)
+    (2016-02, last session of January 2016, all prediction sessions in February 2016)
     """
     first_oos_date = pd.Timestamp(first_oos_date)
     # find all the month start date from first_oos_date to the last date in dates

@@ -1,16 +1,16 @@
-# 期货策略运行与回测说明
+# Futures portfolio execution and backtesting
 
-所有命令均在项目根目录执行。安装和快速运行见[项目README](../README.md)。
+Run all commands from the repository root. See the [project README](../README.md) for setup.
 
-已有数据和预测时，一键更新两组仓位与回测，并汇总四套独立账户：
+With data and forecasts available:
 
 ```bash
 .venv/bin/python scripts/run_pipeline.py
 ```
 
-完整刷新数据及预测：追加`--refresh-data --refit`；仅展示命令：追加`--dry-run`。默认只重跑信号和回测。最终对比在results/backtest/comparison_regression/。中途失败停止，前面已完成的输出可能已更新，旧最终汇总不代表本轮成功。
+Add `--refresh-data --refit` for a full refresh, or `--dry-run` to preview commands. The default only regenerates targets and backtests. Combined results are written to `results/backtest/comparison_regression/`. Execution stops on failure; earlier outputs may already have changed, and an existing summary can belong to an older run.
 
-分别运行时，先准备数据与已有五日预测，再生成目标持仓，最后运行Backtrader。
+Individual commands:
 
 ```bash
 .venv/bin/python -m pip install -r requirements.txt
@@ -22,22 +22,20 @@
 .venv/bin/python scripts/run_backtest.py --config config/backtest_curve.yaml
 ```
 
-两个回测入口默认使用PC配置；更改配置后必须重新生成目标持仓。
+Both backtest entry points default to the PC configuration. Regenerate targets after configuration changes.
 
-- PC组：PC1、PC2、PC3各自独立账户，输出在 results/signals/ridge_capacity_regression/ 和 results/backtest/ridge_capacity_regression/。
-- 统一曲线：单个账户，输出在对应 ridge_curve_regression/。
-- 当前两组初始资金均1,000万美元、五日标准差预算1%、保证金占用上限50%。
-- factor_positions.py负责PC目标与共享回归、日历、整数定仓；curve_positions.py提供统一曲线风险权重。
-- 周末最后交易日生成目标，下个交易时段开盘成交；订单为目标与当前持仓差额。
-- 费用按每份每边2.5美元加半tick滑点费用；缺行情时只沿用估值、不成交。
-- 不按日历剔除换月窗口，保留回归残差异常过滤。没有具体合约换月交易、现金利息或完整追保强平模拟。
-- Yahoo连续序列选择和调整尚未验证，回归敏感度不是CTD定价DV01，当前是研究回测。
+- PC1, PC2 and PC3 are separate accounts. Signals and backtests use the `ridge_capacity_regression` directories.
+- The unified curve strategy is a single account, using the `ridge_curve_regression` directories.
+- Each account starts with USD 10 million, a 1% five-day P&L standard-deviation budget and a 50% margin-use cap, based on initial capital.
+- `factor_positions.py` defines PC targets and shared regression, scheduling and integer sizing. `curve_positions.py` defines unified curve risk weights.
+- Targets are formed at the final weekly session close; market orders execute at the next available session open. Orders adjust target minus actual positions.
+- Commission is USD 2.50 per contract per side plus half a tick charged as a dollar cost. Missing bars carry valuation only and prevent basket fills.
+- Calendar-based roll exclusions are disabled; residual outlier filtering remains. Explicit rolls, cash interest and full margin-call/liquidation procedures are not simulated.
+- Continuous-contract selection and adjustment are unverified. Empirical sensitivities are not CTD valuation DV01.
 
-输出包含summary.csv、equity_comparison.png，以及各策略目录下的equity.csv、orders.csv、positions.csv、data_quality.csv、metrics.json。manifest.json保存配置和输入哈希。
+Outputs include `summary.csv`, `equity_comparison.png`, and per-strategy `equity.csv`, `orders.csv`, `positions.csv`, `data_quality.csv` and `metrics.json`. Manifests record configuration and input hashes.
 
-详细方法见 regression_sensitivity.md。历史V1说明与当前回归版本分开阅读。
-
-脚本 audit_backtest.py 已删除；独立盈亏记账检查保留在 tests/test_backtest_audit.py，直接检查实际Backtrader执行结果。
+See [regression position sizing](regression_sensitivity.md) for equations and filtering rules. The standalone audit script was removed; `tests/test_backtest_audit.py` independently checks actual Backtrader accounting.
 
 ```bash
 .venv/bin/python -m pytest tests -q

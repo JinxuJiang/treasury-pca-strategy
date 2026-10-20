@@ -1,64 +1,57 @@
-# 数据与预测说明
+# Data preparation and forecasting
 
-以下命令均在项目根目录执行。环境安装和完整pipeline入口见[项目README](../README.md)。
+Run commands from the repository root. See the [project README](../README.md) for installation and the complete pipeline.
 
-数据准备入口依次运行国债收益率、宏观历史版本和四种期货日线准备；期货源数据保留缺失，不自行拼接或复权。基础数据与期货参数在config/base.yaml，宏观参数在config/macro.yaml。
+Preparation covers Treasury yields, historical macro vintages and four futures daily series. Missing futures observations are retained; this code does not splice or adjust contracts. Main settings are in `config/base.yaml`, macro settings in `config/macro.yaml`.
 
-## 宏观历史版本数据
+## Historical macro vintages
 
-数据准备已合并到 `prepare_data.py`，先生成国债样本，再对齐宏观特征。
+`prepare_data.py` first creates the Treasury sample, then aligns macro features to its dates.
 
-在根目录 `.env` 配置 `FRED_API_KEY=你的key`，或设置同名环境变量；环境变量优先。不要提交或分享真实 key。
+Set `FRED_API_KEY=your_key` in the root `.env` or environment; the environment takes precedence. Never commit credentials.
 
 ```bash
 python scripts/prepare_data.py
 python scripts/prepare_data.py --offline
 ```
 
-基础配置为 `config/base.yaml`，宏观配置为 `config/macro.yaml`，分别用 `--config` 和 `--macro-config` 指定。合并入口以所选基础配置中的国债输出为准。
+Use `--config` and `--macro-config` to select the respective configurations. Treasury output paths follow the selected base configuration.
 
-FRED 快照缓存在 `data/raw/fred_vintages`；宏观输出在 `data/processed/macro`，包括各指标快照、更新记录、`daily_macro_features.csv` 和审计用 `daily_macro_lineage.csv`。
+FRED snapshots are cached in `data/raw/fred_vintages`. Macro outputs in `data/processed/macro` include indicator snapshots, update records, `daily_macro_features.csv` and provenance in `daily_macro_lineage.csv`.
 
-特征包含失业率和月变化、CPI 与核心 PCE 的同比及环比。比值使用同一快照内数据，月份缺失不跨月替代、不插值。版本日期之后的第一个样本交易日才可使用；该规则不声称重建了官方日内发布时间。
+Features include unemployment and its monthly change, plus year-over-year and month-over-month CPI and core PCE changes. Ratios use observations from the same vintage. Missing months are not interpolated or replaced with other months. Vintages become usable on a subsequent sample session according to the configured lag; this is not a reconstruction of official intraday release timestamps.
 
-宏观日期范围参考本次国债样本；默认观察起点为 2004 年，给同比计算留出历史。离线模式不联网，缺失缓存会报错。
+The vintage range follows the Treasury sample. The default observation start is 2004 to provide history for annual changes. Offline preparation uses caches only and fails when a required cache is absent.
 
-## 含宏观特征的日频预测
+## Daily macro-augmented forecasts
 
 ```bash
 python scripts/prepare_data.py
 python scripts/run_forecasts.py --model ridge
 ```
 
-默认模型是 Ridge，可用 `--model lgbm` 切换。只读取本地准备好的数据，不在预测时下载。
-现在仅运行含宏观特征的模型，不再运行无宏观对照或输出零预测对照指标。
+Ridge is the default; select LightGBM with `--model lgbm`. Forecasting reads prepared local data without downloading it. The current workflow runs macro-augmented forecasts only; historical macro/no-macro experiments were removed.
 
-每日信号预测未来五个交易日累计 PC 变化，每月扩展历史重新拟合，最近两年验证选参。
-调参 PCA 与最终 PCA 分开拟合，保留训练标签完成日期检查；宏观缺失行在训练、验证、预测中排除，不插值，不改变五日标签时间跨度。
+Daily targets are cumulative PC changes over the next five observations. Models are refitted monthly on expanding history, with the most recent two years used for validation. Tuning and final PCA fits are separate. Training labels must be complete by their cutoffs. Rows with missing macro features are excluded without interpolation or changing the five-observation label horizon.
 
-结果保存到 `results/forecast/<model>/`：
+Outputs in `results/forecast/<model>/`:
 
-- `daily_oos_predictions.csv`：PC 预测及实际目标。
-- `model_diagnostics.csv`、`expanding_pca_loadings.csv`：训练诊断和各轮 loading。
-- `yield_change_predictions_bp.csv`：还原的四期限五日变化预测。
-- `pc_metrics.csv`、`yield_metrics.csv`：该模型的完整标签评估。
-- `sample_mask.csv`、`manifest.json`：样本筛选、配置和输入哈希。
+| File | Contents |
+|---|---|
+| `daily_oos_predictions.csv` | PC predictions and realized targets |
+| `model_diagnostics.csv`, `expanding_pca_loadings.csv` | Training diagnostics and PCA vintages |
+| `yield_change_predictions_bp.csv` | Reconstructed five-observation yield-change forecasts |
+| `pc_metrics.csv`, `yield_metrics.csv` | Evaluation on completed labels |
+| `sample_mask.csv`, `manifest.json` | Sample inclusion, configuration and input hashes |
 
-还原公式为累计 PC 预测乘 loading，再加五倍 PCA 训练均值，第四个 PC 的预测 score 设为零。
-重跑会更新上述目录；早期有/无宏观及其他模型的旧实验结果已删除。
+Reconstruction multiplies cumulative PC forecasts by loadings and adds five times the PCA training mean; the fourth PC forecast is zero. Reruns update these outputs.
 
-## LightGBM补充
-
-Ridge是默认模型，LightGBM可用同一个预测入口选择：
+## LightGBM
 
 ```bash
 python scripts/run_forecasts.py --model lgbm
 ```
 
-所有依赖统一在requirements.txt。
+Dependencies are included in the single `requirements.txt`. Outputs are written to `results/forecast/lgbm/`.
 
-只运行含宏观特征的预测，输出到 `results/forecast/lgbm/`，不再运行无宏观对照。早期对照结果已在本次仓库整理中删除。
-
-每日信号、未来五日累计 PC 目标、每月 expanding 重拟合和两年验证期不变。
-六组候选参数按各 PC 验证 RMSE 选择，不使用 OOS 或 early stopping 选参数。
-宏观数据使用当时可用的历史版本，缺失样本排除；PC 预测还原为期限 bp 变化后评估。
+LightGBM uses the same daily five-observation targets, monthly expanding refits, two-year validation period and point-in-time macro features. Six parameter candidates are selected separately for each PC using validation RMSE, without out-of-sample selection or early stopping. Missing macro rows are excluded, and reconstructed maturity-level forecasts are evaluated in basis points.
