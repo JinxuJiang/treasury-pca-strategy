@@ -115,6 +115,10 @@ These results are not directly comparable with the former proxy-DV01 version: al
 
 The unified curve and PC1 were profitable in this sample; costs materially reduced PC2 returns, and PC3 lost money. Future research should prioritize allocation stability, turnover, costs, roll handling and stress risk.
 
+## Next development phase
+
+The [next-phase implementation plan](docs/next_steps.md) prioritizes actual dated futures data, explicit contract rolls and costs, a rebuilt historical-risk baseline, and GARCH-based volatility sizing. It defines data requirements, integration points and acceptance tests. These changes are planned, not yet implemented.
+
 ## Limitations and repository scope
 
 Yahoo continuous-contract selection and adjustment are unverified. Regression sensitivities are not CTD valuation DV01. The engine does not model explicit contract rolls and roll costs, cash interest, or complete initial/maintenance-margin and liquidation procedures. Filtering may understate tail risk. These are exploratory research results, not validated executable returns.

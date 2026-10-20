@@ -2,6 +2,8 @@
 
 > Historical research plan, not the current runbook (marked October 20, 2026). Proposed directories, immediate tasks and DV01 mappings below may differ from the implementation. Use README.md for installation and execution, and docs/regression_sensitivity.md for current allocation. Yield and macro preparation, PCA forecasting, regression-based sizing and exploratory continuous-futures backtesting are implemented; explicit rolls and CTD validation remain future work.
 
+For the current follow-up work, see [the next-phase implementation plan](docs/next_steps.md).
+
 ## 1. Project objective
 
 Build an interpretable systematic interest-rate strategy with the following chain:
